@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Zap, Shield, Globe2 } from "lucide-react";
-import { SplineScene } from "./SplineScene";
+import SplineScene from "./SplineScene";
 import { AnimatedStats } from "./AnimatedStats";
 
 export function HeroSection() {

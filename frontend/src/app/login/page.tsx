@@ -1,127 +1,232 @@
 "use client";
 
-import { motion, useMotionValue, useSpring } from "framer-motion";
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  AnimatePresence,
+} from "framer-motion";
 import {
   Satellite,
-  Shield,
-  Zap,
-  ArrowRight,
+  ShieldCheck,
+  Radar,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
+
 import { ParticleBackground } from "@/components/layout/ParticleBackground";
+
+const missionTexts = [
+  "Enhancing Infrared Imagery...",
+  "Detecting Thermal Signatures...",
+  "Processing Multi-Spectral Data...",
+  "Initializing Mission Control...",
+];
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
+  const [textIndex, setTextIndex] = useState(0);
+
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 80, damping: 20 });
-  const springY = useSpring(mouseY, { stiffness: 80, damping: 20 });
+
+  const rotateX = useSpring(mouseY, {
+    stiffness: 120,
+    damping: 20,
+  });
+
+  const rotateY = useSpring(mouseX, {
+    stiffness: 120,
+    damping: 20,
+  });
 
   useEffect(() => {
-    if (session) router.replace("/");
+    if (session) {
+      router.replace("/");
+    }
   }, [session, router]);
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      mouseX.set((e.clientX / window.innerWidth - 0.5) * 20);
-      mouseY.set((e.clientY / window.innerHeight - 0.5) * 20);
+    const timer = setInterval(() => {
+      setTextIndex((prev) => (prev + 1) % missionTexts.length);
+    }, 2500);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleMouse = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 25;
+      const y = -(e.clientY / window.innerHeight - 0.5) * 25;
+
+      mouseX.set(x);
+      mouseY.set(y);
     };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
+
+    window.addEventListener("mousemove", handleMouse);
+
+    return () => window.removeEventListener("mousemove", handleMouse);
   }, [mouseX, mouseY]);
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", {
+      callbackUrl: "/",
+    });
   };
 
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden thermal-grid">
+    <main className="relative min-h-screen overflow-hidden flex items-center justify-center px-6">
+
       <ParticleBackground />
 
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,229,255,0.08)_0%,transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(124,58,237,0.08)_0%,transparent_50%)]" />
+      {/* Animated Orbs */}
+      <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-cyan-500/20 blur-[140px] animate-pulse" />
+      <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-purple-500/20 blur-[140px] animate-pulse" />
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center py-12">
+      <div className="relative z-10 grid lg:grid-cols-2 gap-16 max-w-7xl w-full items-center">
+
+        {/* LEFT SIDE */}
         <motion.div
-          style={{ rotateY: springX, rotateX: springY }}
-          initial={{ opacity: 0, x: -30 }}
+          style={{
+            rotateX,
+            rotateY,
+            transformStyle: "preserve-3d",
+          }}
+          initial={{ opacity: 0, x: -60 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.9 }}
           className="hidden lg:block"
         >
-          <div className="relative">
-            <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-secondary/10 to-accent/10 rounded-full blur-3xl animate-pulse-glow" />
-            <div className="relative glass-strong rounded-3xl p-10 glow-cyan">
-              <Satellite className="h-16 w-16 text-primary mb-6 animate-float" />
-              <h2 className="text-3xl font-bold mb-4">
-                Secure Access to{" "}
-                <span className="text-gradient">InfraVision AI</span>
-              </h2>
-              <p className="text-foreground/60 leading-relaxed mb-8">
-                Authenticate to access the infrared enhancement pipeline,
-                satellite data processing, and defense-grade AI modules.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { icon: Shield, text: "End-to-end encrypted sessions" },
-                  { icon: Zap, text: "Real-time IR processing dashboard" },
-                  { icon: Satellite, text: "ISRO-compatible data formats" },
-                ].map(({ icon: Icon, text }) => (
-                  <div key={text} className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                    {text}
+          <div className="glass-strong rounded-[32px] p-10 border border-primary/20">
+
+            <motion.div
+              animate={{
+                y: [0, -15, 0],
+                rotate: [0, 6, -6, 0],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+              }}
+            >
+              <Satellite className="h-20 w-20 text-primary mb-8" />
+            </motion.div>
+
+            <h1 className="text-5xl font-bold leading-tight">
+              Welcome to
+              <br />
+              <span className="text-gradient">
+                InfraVision AI
+              </span>
+            </h1>
+
+            <p className="mt-6 text-foreground/60 leading-relaxed">
+              AI-powered infrared image enhancement and
+              satellite intelligence platform built for
+              Bharatiya Antariksh Hackathon.
+            </p>
+
+            <div className="mt-10 space-y-5">
+              {[
+                {
+                  icon: ShieldCheck,
+                  text: "Secure OAuth Authentication",
+                },
+                {
+                  icon: Radar,
+                  text: "Real-time Thermal Analytics",
+                },
+                {
+                  icon: Satellite,
+                  text: "Satellite-ready AI Processing",
+                },
+              ].map(({ icon: Icon, text }) => (
+                <div
+                  key={text}
+                  className="flex items-center gap-4"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Icon className="h-5 w-5 text-primary" />
                   </div>
-                ))}
-              </div>
+
+                  <span className="text-foreground/80">
+                    {text}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10 text-primary font-medium h-8">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={textIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  {missionTexts[textIndex]}
+                </motion.p>
+              </AnimatePresence>
             </div>
           </div>
         </motion.div>
 
+        {/* LOGIN CARD */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="w-full max-w-md mx-auto"
+          transition={{ duration: 0.8 }}
+          whileHover={{
+            scale: 1.02,
+          }}
+          className="max-w-md w-full mx-auto"
         >
-          <div className="glass-strong rounded-3xl p-8 md:p-10 border border-primary/20 shadow-[0_0_60px_rgba(0,229,255,0.08)]">
-            <div className="flex items-center gap-2 mb-8 lg:hidden">
+          <div className="glass-strong rounded-[32px] border border-primary/20 p-10 shadow-[0_0_60px_rgba(0,229,255,0.08)]">
+
+            <div className="flex items-center gap-3 mb-8">
               <Satellite className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">
-                Infra<span className="text-primary">Vision</span> AI
-              </span>
+
+              <h2 className="text-2xl font-bold">
+                InfraVision AI
+              </h2>
             </div>
 
-            <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
-            <p className="text-foreground/50 text-sm mb-8">
-              Sign in to access the mission control dashboard
+            <h3 className="text-3xl font-bold">
+              Mission Login
+            </h3>
+
+            <p className="text-foreground/50 mt-2 mb-8">
+              Authenticate to access the mission dashboard.
             </p>
 
             <button
-              onClick={handleGoogleSignIn}
+              onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 h-12 rounded-xl bg-white text-gray-900 font-medium hover:bg-gray-100 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] disabled:opacity-60 group"
+              className="group h-14 w-full rounded-2xl bg-white text-black font-semibold flex items-center justify-center gap-3 transition-all hover:scale-[1.02]"
             >
               {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="animate-spin h-5 w-5" />
               ) : (
                 <>
-                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -132,37 +237,27 @@ export default function LoginPage() {
                     />
                     <path
                       fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      d="M5.84 14.09A6.98 6.98 0 015.5 12c0-.73.13-1.43.34-2.09V7.07H2.18A11 11 0 001 12c0 1.77.43 3.45 1.18 4.93z"
                     />
                     <path
                       fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"
                     />
                   </svg>
+
                   Continue with Google
+
                   <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                 </>
               )}
             </button>
 
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-[rgba(15,23,42,0.9)] px-3 text-foreground/40">
-                  Secure OAuth 2.0
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-foreground/35 text-center leading-relaxed">
-              By signing in, you agree to our mission data handling policies.
-              Authorized personnel only.
+            <p className="mt-8 text-center text-xs text-foreground/35">
+              Secure OAuth 2.0 • End-to-End Encryption
             </p>
           </div>
         </motion.div>
       </div>
-    </div>
+    </main>
   );
 }
