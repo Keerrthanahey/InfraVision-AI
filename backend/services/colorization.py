@@ -15,7 +15,11 @@ PALETTES = {
 
 def apply_palette(gray: np.ndarray, palette: str) -> np.ndarray:
     cmap = PALETTES.get(palette, cv2.COLORMAP_INFERNO)
+
     if cmap is None:
         return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-    colored = cv2.applyColorMap(gray, cmap)
+
+    normalized = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
+    colored = cv2.applyColorMap(normalized, cmap)
+
     return colored
