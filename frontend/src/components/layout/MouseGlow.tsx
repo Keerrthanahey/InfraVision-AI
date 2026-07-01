@@ -4,34 +4,102 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 export function MouseGlow() {
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState({ x: -100, y: -100 });
+  const [hovering, setHovering] = useState(false);
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      setPos({ x: e.clientX, y: e.clientY });
-      setVisible(true);
-    };
-    const onLeave = () => setVisible(false);
+    // Hide default cursor
+    document.body.style.cursor = "none";
 
-    window.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseleave", onLeave);
+    const move = (e: MouseEvent) => {
+      setPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
+    };
+
+    const addHoverEvents = () => {
+      const elements = document.querySelectorAll(
+        'a, button, input, textarea, select, [role="button"], .cursor-hover'
+      );
+
+      elements.forEach((el) => {
+        el.addEventListener("mouseenter", handleEnter);
+        el.addEventListener("mouseleave", handleLeave);
+      });
+
+      return () => {
+        elements.forEach((el) => {
+          el.removeEventListener("mouseenter", handleEnter);
+          el.removeEventListener("mouseleave", handleLeave);
+        });
+      };
+    };
+
+    const handleEnter = () => setHovering(true);
+    const handleLeave = () => setHovering(false);
+
+    window.addEventListener("mousemove", move);
+
+    const cleanupHover = addHoverEvents();
+
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseleave", onLeave);
+      document.body.style.cursor = "default";
+      window.removeEventListener("mousemove", move);
+      cleanupHover();
     };
   }, []);
 
-  if (!visible) return null;
-
   return (
-    <motion.div
-      className="fixed pointer-events-none z-[9999] mix-blend-screen"
-      animate={{ x: pos.x - 200, y: pos.y - 200 }}
-      transition={{ type: "spring", damping: 30, stiffness: 200, mass: 0.5 }}
-      aria-hidden
-    >
-      <div className="w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(0,229,255,0.12)_0%,transparent_70%)]" />
-    </motion.div>
+    <>
+      {/* Glow Circle */}
+      <motion.div
+        className="fixed pointer-events-none z-[9998]"
+        animate={{
+          x: position.x,
+          y: position.y,
+          scale: hovering ? 1.8 : 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 220,
+          damping: 28,
+          mass: 0.5,
+        }}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(0,229,255,0.18) 0%, rgba(0,229,255,0.08) 40%, transparent 75%)",
+          transform: "translate(-50%, -50%)",
+          filter: "blur(2px)",
+        }}
+      />
+
+      {/* Pointer Dot */}
+      <motion.div
+        className="fixed pointer-events-none z-[9999]"
+        animate={{
+          x: position.x,
+          y: position.y,
+          scale: hovering ? 1.5 : 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 500,
+          damping: 35,
+        }}
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: "#00E5FF",
+          boxShadow:
+            "0 0 8px #00E5FF, 0 0 18px #00E5FF, 0 0 28px rgba(0,229,255,0.8)",
+          transform: "translate(-50%, -50%)",
+        }}
+      />
+    </>
   );
 }
